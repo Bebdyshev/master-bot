@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
+        credentials: "include", // Important: include cookies in request
         headers: {
           "Accept": "application/json, text/plain, */*",
           "Content-Type": "application/json",
@@ -65,17 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json()
 
-      // Normalize possible response shapes. Many APIs return { token, user } or { accessToken, student }
-      const token = data?.token || data?.accessToken || null
-      const user = data?.user || data?.student || (token ? null : data)
+      // Token is now stored in httpOnly cookie by backend
+      // Only user data is returned in response body
+      const user = data?.user || data?.student || data
 
       if (user) {
         setUser(user)
         localStorage.setItem("user", JSON.stringify(user))
-      }
-
-      if (token) {
-        localStorage.setItem("token", token)
       }
 
       router.push("/dashboard")
@@ -87,7 +84,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem("user")
-    localStorage.removeItem("token")
+    
+    // Call backend to clear cookie
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+    fetch(`${apiUrl}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include"
+    }).catch(() => {
+      // Ignore errors, still redirect to login
+    })
+    
     router.push("/login")
   }
 

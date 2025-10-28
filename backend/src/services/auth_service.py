@@ -12,7 +12,7 @@ async def forward_login(payload: LoginIn):
         try:
             resp = await client.post(
                 url,
-                json=payload.dict(),
+                json={"studentId": payload.studentId, "password": payload.password},
                 headers={"Accept": "application/json, text/plain, */*", "Content-Type": "application/json"},
                 timeout=10.0,
             )
