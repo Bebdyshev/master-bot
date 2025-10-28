@@ -12,7 +12,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Backend runs on: http://localhost:8000
