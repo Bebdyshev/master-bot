@@ -58,8 +58,7 @@ frontend/
 
 ### Backend (.env)
 - `FRONTEND_ORIGINS` — Allowed CORS origins (default: `http://localhost:3000`)
-- `EXTERNAL_API_BASE` — External API base URL (default: `https://api.mastereducation.kz`)
-
+- `EXTERNAL_API_BASE` — External API base URL (default: `http://localhost:3001`)
 ### Frontend (.env.local)
 - `NEXT_PUBLIC_API_URL` — Backend API URL (default: `http://localhost:8000`)
 
