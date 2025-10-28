@@ -35,8 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (studentId: string, password: string) => {
     try {
-      // POST directly to the external Students/login endpoint as requested
-      const response = await fetch("https://api.mastereducation.kz/api/Students/login", {
+      // POST to local backend proxy which forwards to the external Students/login endpoint
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Accept": "application/json, text/plain, */*",
@@ -50,7 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let message = "Неверный ID ученика или пароль"
         try {
           const errJson = await response.json()
-          if (errJson && (errJson.message || errJson.error)) {
+          if (errJson && errJson.detail) {
+            // FastAPI HTTPException returns detail field
+            message = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail)
+          } else if (errJson && (errJson.message || errJson.error)) {
             message = errJson.message || errJson.error
           }
         } catch (e) {
