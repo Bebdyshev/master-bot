@@ -1,15 +1,19 @@
 """
-AI Agent for Student Support using LangChain + Groq
+AI Agent for Student Support using LangChain + Google Gemini
 Automatically detects student problems and suggests solutions
 """
 import os
+import warnings
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from typing import List, Dict
 from src.agents.tools import TOOLS
+
+# Suppress Gemini schema warnings
+warnings.filterwarnings("ignore", message="Key 'title' is not supported in schema")
 
 load_dotenv()
 
@@ -18,15 +22,15 @@ class StudentSupportAgent:
         # Ensure student_id is always a string
         self.student_id = str(student_id) if student_id else "unknown"
         
-        # Initialize Groq LLM
-        api_key = os.getenv("GROQ_API_KEY")
+        # Initialize Gemini LLM
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("GROQ_API_KEY not found in environment variables")
+            raise ValueError("GEMINI_API_KEY not found in environment variables")
         
-        self.llm = ChatGroq(
-            model="qwen/qwen3-32b",  # More capable model for tool use
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash-exp",
             temperature=0.7,
-            api_key=api_key
+            google_api_key=api_key
         )
         
         # Create system prompt
@@ -91,27 +95,44 @@ class StudentSupportAgent:
 ⚠️ ОБЩИЕ ПРАВИЛА:
 
 1. УТОЧНЕНИЕ ПЕРЕД ДЕЙСТВИЕМ:
-   - Всегда собирай ВСЕ необходимые детали
-   - Задавай вопросы естественно, не как анкета
-   - Подтверждай понимание перед созданием тикета
+   - Собирай ТОЛЬКО самую необходимую информацию для создания тикета
+   - НЕ будь дотошным - если есть основная информация, СРАЗУ создавай тикет
+   - Задавай максимум 1-2 уточняющих вопроса, не больше
+   - Если студент уже описал проблему достаточно - НЕМЕДЛЕННО используй инструмент
+   - НЕ переспрашивай то, что студент уже сказал
+   - После получения ключевой информации - ДЕЙСТВУЙ, не раздумывай
+   
+   ✅ ДОСТАТОЧНО для тикета:
+   - Возврат: причина указана → создавай тикет
+   - Заморозка: срок примерно понятен → создавай тикет
+   - Смена группы: причина есть → создавай тикет
+   - Техническая проблема: описание есть → создавай тикет
+   
+   ❌ НЕ НУЖНО:
+   - Спрашивать "А что еще?" после получения основной информации
+   - Требовать точные даты, если указан примерный период
+   - Переспрашивать детали, которые можно уточнить позже
+   - Собирать "полную картину" - админы сами уточнят при обработке
 
 2. ИНФОРМИРОВАНИЕ:
-   - Объясняй процесс студенту
+   - Объясняй процесс студенту КРАТКО
    - Сообщай сроки ожидания
    - Указывай кто будет обрабатывать запрос
 
 3. ПРОСТЫЕ ЗАПРОСЫ БЕЗ ТИКЕТОВ:
-   - Оценки: check_grades()
-   - Расписание: check_schedule()
-   - Посещаемость: check_attendance()
-   - Материалы: find_learning_materials()
-   - Объяснение темы: explain_topic()
+   - Общие вопросы о платформе, курсах
+   - Благодарности, приветствия
+   - Вопросы о процессах (отвечай напрямую)
 
 4. СТИЛЬ ОБЩЕНИЯ:
    - На русском языке
-   - Дружелюбный и профессиональный
-   - Показывай заботу о студенте
+   - Дружелюбный и БЫСТРЫЙ - не затягивай диалог
+   - Показывай заботу через ДЕЙСТВИЯ, а не бесконечные вопросы
    - Четко следуй бизнес-процессам
+   - ПРИОРИТЕТ: быстро создать тикет, а не собрать идеальное описание
+
+ВАЖНО: Твоя цель - ПОМОЧЬ студенту БЫСТРО, а не провести идеальное интервью. 
+Если можешь создать тикет - создавай НЕМЕДЛЕННО. Админы разберутся с деталями.
 
 Student ID: {student_id}
 """),
